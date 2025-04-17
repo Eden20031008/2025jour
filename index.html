@@ -15,14 +15,14 @@
     }
     #game {
       display: grid;
-      grid-template-columns: repeat(10, 30px);
+      grid-template-columns: repeat(10, 32px);
       grid-gap: 2px;
       margin: 20px auto;
       width: max-content;
     }
     .cell {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       background: #ccc;
       cursor: pointer;
       display: flex;
@@ -31,14 +31,15 @@
       font-weight: bold;
       border-radius: 4px;
       user-select: none;
-      font-size: 14px;
+      font-size: 16px;
     }
     .cell.open {
       background: #eee;
       cursor: default;
     }
     .cell.mine.open {
-      background: red;
+      background: #ff4c4c;
+      color: white;
     }
     button {
       padding: 8px 16px;
@@ -67,11 +68,13 @@
     const game = document.getElementById("game");
 
     let cells = [];
+    let firstClick = true;
 
     function createGame() {
       game.innerHTML = '';
       cells = [];
-      game.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+      firstClick = true;
+      game.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
 
       for (let i = 0; i < rows * cols; i++) {
         const cell = document.createElement("div");
@@ -81,14 +84,13 @@
         game.appendChild(cell);
         cells.push(cell);
       }
-
-      placeMines();
     }
 
-    function placeMines() {
+    function placeMines(firstIndex) {
       let placed = 0;
       while (placed < mineCount) {
         let index = Math.floor(Math.random() * cells.length);
+        if (index === firstIndex) continue; // 第一點不能放地雷
         if (!cells[index].classList.contains("mine")) {
           cells[index].classList.add("mine");
           placed++;
@@ -99,6 +101,15 @@
     function onCellClick(e) {
       const cell = e.target;
       if (cell.classList.contains("open")) return;
+
+      const index = parseInt(cell.dataset.index);
+
+      // 第一次點 -> 放地雷
+      if (firstClick) {
+        placeMines(index);
+        firstClick = false;
+      }
+
       if (cell.classList.contains("mine")) {
         cell.classList.add("open");
         cell.textContent = "💣";
@@ -107,7 +118,6 @@
         return;
       }
 
-      const index = parseInt(cell.dataset.index);
       const count = countMinesAround(index);
       cell.classList.add("open");
       if (count > 0) {
