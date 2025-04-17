@@ -1,139 +1,171 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<title>踩地雷！</title>
-<style>
-  body {
-    background: #1E3A8A;
-    font-family: sans-serif;
-    text-align: center;
-    padding: 20px;
-    color: #fff;
-  }
-
-  h1 {
-    margin-bottom: 20px;
-  }
-
-  .board {
-    display: grid;
-    grid-template-columns: repeat(10, 30px);
-    grid-gap: 2px;
-    justify-content: center;
-  }
-
-  .cell {
-    width: 30px;
-    height: 30px;
-    background: #E0F2FE;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #333;
-    line-height: 30px;
-    user-select: none;
-  }
-
-  .cell.revealed {
-    background: #fff;
-    cursor: default;
-  }
-
-  .cell.mine {
-    background: red;
-    color: #fff;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>踩地雷遊戲</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #game {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      grid-gap: 2px;
+      margin: 20px auto;
+      width: max-content;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      background: #ccc;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      border-radius: 4px;
+      user-select: none;
+      font-size: 14px;
+    }
+    .cell.open {
+      background: #eee;
+      cursor: default;
+    }
+    .cell.mine.open {
+      background: red;
+    }
+    button {
+      padding: 8px 16px;
+      margin-top: 10px;
+      border: none;
+      background: #4CAF50;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+  </style>
 </head>
 <body>
+  <h1>踩地雷遊戲</h1>
+  <div id="game"></div>
+  <button onclick="createGame()">重新開始</button>
 
-<h1>💣 踩地雷遊戲 💣</h1>
-<div class="board" id="board"></div>
+  <script>
+    const rows = 10;
+    const cols = 10;
+    const mineCount = 15;
+    const game = document.getElementById("game");
 
-<script>
-  const boardSize = 10;
-  const mineCount = 15;
-  const board = document.getElementById('board');
+    let cells = [];
 
-  let cells = [];
+    function createGame() {
+      game.innerHTML = '';
+      cells = [];
+      game.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
 
-  function createBoard() {
-    cells = [];
-    board.innerHTML = '';
-    for (let i = 0; i < boardSize * boardSize; i++) {
-      let cell = document.createElement('div');
-      cell.classList.add('cell');
-      cell.dataset.index = i;
-      board.appendChild(cell);
-      cells.push(cell);
-    }
-    placeMines();
-    cells.forEach(cell => cell.addEventListener('click', revealCell));
-  }
-
-  function placeMines() {
-    let minesPlaced = 0;
-    while (minesPlaced < mineCount) {
-      let index = Math.floor(Math.random() * cells.length);
-      if (!cells[index].classList.contains('mine')) {
-        cells[index].classList.add('mine');
-        minesPlaced++;
+      for (let i = 0; i < rows * cols; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.dataset.index = i;
+        cell.addEventListener("click", onCellClick);
+        game.appendChild(cell);
+        cells.push(cell);
       }
-    }
-  }
 
-  function revealCell(e) {
-    const cell = e.target;
-    if (cell.classList.contains('revealed')) return;
-    cell.classList.add('revealed');
-
-    if (cell.classList.contains('mine')) {
-      cell.innerText = '💣';
-      alert("你踩到地雷啦！");
-      revealAll();
-      return;
+      placeMines();
     }
 
-    let index = parseInt(cell.dataset.index);
-    let neighbors = getNeighbors(index);
-    let mineCount = neighbors.filter(i => cells[i].classList.contains('mine')).length;
-    if (mineCount > 0) {
-      cell.innerText = mineCount;
-    } else {
-      neighbors.forEach(i => revealCell({target: cells[i]}));
-    }
-  }
-
-  function getNeighbors(index) {
-    const neighbors = [];
-    const x = index % boardSize;
-    const y = Math.floor(index / boardSize);
-
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        if (dx === 0 && dy === 0) continue;
-        let nx = x + dx;
-        let ny = y + dy;
-        if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
-          neighbors.push(ny * boardSize + nx);
+    function placeMines() {
+      let placed = 0;
+      while (placed < mineCount) {
+        let index = Math.floor(Math.random() * cells.length);
+        if (!cells[index].classList.contains("mine")) {
+          cells[index].classList.add("mine");
+          placed++;
         }
       }
     }
-    return neighbors;
-  }
 
-  function revealAll() {
-    cells.forEach(cell => {
-      cell.classList.add('revealed');
-      if (cell.classList.contains('mine')) {
-        cell.innerText = '💣';
+    function onCellClick(e) {
+      const cell = e.target;
+      if (cell.classList.contains("open")) return;
+      if (cell.classList.contains("mine")) {
+        cell.classList.add("open");
+        cell.textContent = "💣";
+        alert("踩到地雷啦！遊戲結束！");
+        revealAll();
+        return;
       }
-    });
-  }
 
-  createBoard();
-</script>
+      const index = parseInt(cell.dataset.index);
+      const count = countMinesAround(index);
+      cell.classList.add("open");
+      if (count > 0) {
+        cell.textContent = count;
+      } else {
+        openAdjacent(index);
+      }
+    }
 
+    function countMinesAround(index) {
+      const neighbors = getNeighbors(index);
+      return neighbors.filter(i => cells[i].classList.contains("mine")).length;
+    }
+
+    function getNeighbors(index) {
+      const neighbors = [];
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const r = row + dr;
+          const c = col + dc;
+          if (r >= 0 && r < rows && c >= 0 && c < cols) {
+            neighbors.push(r * cols + c);
+          }
+        }
+      }
+      return neighbors;
+    }
+
+    function openAdjacent(index) {
+      const neighbors = getNeighbors(index);
+      neighbors.forEach(i => {
+        const cell = cells[i];
+        if (!cell.classList.contains("open") && !cell.classList.contains("mine")) {
+          const count = countMinesAround(i);
+          cell.classList.add("open");
+          if (count > 0) {
+            cell.textContent = count;
+          } else {
+            openAdjacent(i);
+          }
+        }
+      });
+    }
+
+    function revealAll() {
+      cells.forEach(cell => {
+        if (cell.classList.contains("mine")) {
+          cell.classList.add("open");
+          cell.textContent = "💣";
+        }
+      });
+    }
+
+    createGame();
+  </script>
 </body>
 </html>
